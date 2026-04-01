@@ -1,1 +1,210 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Web Compiler Pro</title><script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script><style>
+body { margin:0; font-family:Segoe UI, sans-serif; background:#0f172a; color:#e2e8f0; }
+#topbar { background:#1e293b; padding:6px; text-align:center; font-size:12px; }
+#controls { padding:8px; background:#111827; display:flex; flex-wrap:wrap; gap:6px; }
+button { background:#2563eb; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
+button:hover { background:#1d4ed8; }
+#container { display:flex; height:88vh; }
+#editor { width:70%; height:100%; }
+#terminal { width:30%; background:#020617; color:#22c55e; padding:10px; overflow:auto; font-family:monospace; white-space:pre-wrap; }
+#tabs { display:flex; background:#020617; padding:5px; gap:5px; overflow-x:auto; }
+.tab { padding:5px 10px; background:#1e293b; border-radius:6px; cursor:pointer; white-space:nowrap; }
+.tab.active { background:#2563eb; }
+@media (max-width:768px){
+  #container{flex-direction:column;}
+  #editor{width:100%;}
+  #terminal{display:none;width:100%;height:50%;}
+}
+</style></head>
+<body>
+<div id="topbar">⚠ input() is NOT supported in this compiler</div><div id="controls">
+<button onclick="runCode()">Run</button>
+<button onclick="saveCode()">Save</button>
+<button onclick="undo()">Undo</button>
+<button onclick="redo()">Redo</button>
+<button onclick="formatCode()">Format</button>
+<button onclick="newTab()">New Tab</button>
+<button onclick="downloadFile()">Download</button>
+<button onclick="uploadFile()">Open File</button>
+<button onclick="shareCode()">Share</button>
+<input type="file" id="fileInput" hidden />
+</div><div id="tabs"></div><div id="container">
+  <div id="editor"></div>
+  <div id="terminal"></div>
+</div><script>
+let pyodide;
+let editor;
+let tabs = {};
+let currentTab = null;
+let undoStack = [];
+let redoStack = [];
+let blackLoaded = false;
+
+async function init(){ 
+  pyodide = await loadPyodide();
+  await pyodide.loadPackage('micropip');
+}
+init();
+
+function waitForEditorReady(){
+  return new Promise(resolve=>{
+    let check = setInterval(()=>{
+      if(editor){
+        clearInterval(check);
+        resolve();
+      }
+    },50);
+  });
+}
+
+require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+require(['vs/editor/editor.main'], function () {
+  editor = monaco.editor.create(document.getElementById('editor'), {
+    value: '',
+    language: 'python',
+    theme: 'vs-dark',
+    automaticLayout: true,
+    lineNumbers: 'on',
+    minimap: { enabled: false }
+  });
+
+  editor.onDidChangeModelContent(() => {
+    undoStack.push(editor.getValue());
+  });
+
+  editor.onDidPaste(() => formatCode());
+});
+
+// Prevent Ctrl+R reload
+window.addEventListener("keydown", (e)=>{
+  if(e.ctrlKey && e.key === 'r'){
+    e.preventDefault();
+    runCode();
+  }
+});
+
+async function loadBlack(){
+  if(!blackLoaded){
+    terminal.innerText = "Loading formatter...";
+    await pyodide.runPythonAsync(`import micropip\nawait micropip.install('black')\nimport black`);
+    blackLoaded = true;
+  }
+}
+
+async function formatCode(){
+  await waitForEditorReady();
+  try{
+    await loadBlack();
+    let formatted = await pyodide.runPythonAsync(`import black\nblack.format_str(${JSON.stringify(editor.getValue())}, mode=black.FileMode())`);
+    editor.setValue(formatted);
+  }catch(e){ terminal.innerText = e; }
+}
+
+async function runCode(){
+  await waitForEditorReady();
+  let code = editor.getValue();
+  terminal.style.display = "block";
+
+  try {
+    let result = await pyodide.runPythonAsync(`
+import sys, traceback
+from io import StringIO
+_output = StringIO()
+sys.stdout = _output
+try:
+${code.split("\n").map(l => "    "+l).join("\n")}
+except Exception:
+    traceback.print_exc()
+_output.getvalue()`);
+
+    terminal.innerText = result;
+  } catch (err) {
+    terminal.innerText = err;
+  }
+}
+
+async function saveCode(){
+  await waitForEditorReady();
+  if(currentTab) tabs[currentTab] = editor.getValue();
+}
+
+async function undo(){
+  await waitForEditorReady();
+  if(undoStack.length>1){
+    redoStack.push(undoStack.pop());
+    editor.setValue(undoStack[undoStack.length-1]);
+  }
+}
+
+async function redo(){
+  await waitForEditorReady();
+  if(redoStack.length>0){
+    let val = redoStack.pop();
+    undoStack.push(val);
+    editor.setValue(val);
+  }
+}
+
+function newTab(){
+  let name = prompt("Enter tab name:", "tab"+(Object.keys(tabs).length+1));
+  if(!name) return;
+  tabs[name] = '';
+  currentTab = name;
+  editor.setValue('');
+  undoStack = [];
+  redoStack = [];
+  renderTabs();
+}
+
+function renderTabs(){
+  let tabsDiv = document.getElementById("tabs");
+  tabsDiv.innerHTML = "";
+  Object.keys(tabs).forEach(t=>{
+    let el = document.createElement("div");
+    el.className = "tab" + (t===currentTab?" active":"");
+    el.innerText = t;
+    el.onclick = ()=>{
+      tabs[currentTab] = editor.getValue();
+      currentTab = t;
+      editor.setValue(tabs[t]);
+      undoStack = [tabs[t]];
+      redoStack = [];
+      renderTabs();
+    };
+    tabsDiv.appendChild(el);
+  });
+}
+
+// Init first tab
+newTab();
+
+function downloadFile(){
+  let blob = new Blob([editor.getValue()], {type:"text/plain"});
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "code.py";
+  a.click();
+}
+
+function uploadFile(){ fileInput.click(); }
+fileInput.addEventListener("change", e=>{
+  let file = e.target.files[0];
+  let reader = new FileReader();
+  reader.onload = ()=> editor.setValue(reader.result);
+  reader.readAsText(file);
+});
+
+function shareCode(){
+  let code = encodeURIComponent(editor.getValue());
+  let url = location.origin + location.pathname + "?code=" + code;
+  navigator.clipboard.writeText(url);
+  alert("Link copied!");
+}
+
+</script></body>
+</html>
 
