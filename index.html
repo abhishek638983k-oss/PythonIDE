@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Web Compiler Pro</title>
+    <title>Python Web Compiler Pro+</title>
 
     <!-- Pyodide -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
@@ -14,33 +14,177 @@
     <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="dark">
 
+    <!-- Top Bar -->
     <div id="topbar">
-        ⚠ input() is NOT supported in this compiler
+        <span>🐍 Python Web Compiler Pro+</span>
+
+        <div id="topbar-actions">
+            <button onclick="toggleTheme()">🌙 Theme</button>
+            <button onclick="clearTerminal()">🧹 Clear</button>
+        </div>
     </div>
 
+    <!-- Controls -->
     <div id="controls">
-        <button onclick="runCode()">Run</button>
-        <button onclick="saveCode()">Save</button>
-        <button onclick="undo()">Undo</button>
-        <button onclick="redo()">Redo</button>
-        <button onclick="formatCode()">Format</button>
-        <button onclick="newTab()">New Tab</button>
-        <button onclick="downloadFile()">Download</button>
-        <button onclick="uploadFile()">Open File</button>
-        <button onclick="shareCode()">Share</button>
 
-        <input type="file" id="fileInput" hidden />
+        <button onclick="runCode()">▶ Run</button>
+
+        <button onclick="saveCode()">💾 Save</button>
+
+        <button onclick="undo()">↶ Undo</button>
+
+        <button onclick="redo()">↷ Redo</button>
+
+        <button onclick="formatCode()">✨ Format</button>
+
+        <button onclick="newTab()">➕ New Tab</button>
+
+        <button onclick="downloadFile()">⬇ Download</button>
+
+        <button onclick="uploadFile()">📂 Open File</button>
+
+        <button onclick="shareCode()">🔗 Share</button>
+
+        <button onclick="installPackage()">📦 Install Package</button>
+
+        <input
+            type="file"
+            id="fileInput"
+            hidden
+        >
     </div>
 
+    <!-- Tabs -->
     <div id="tabs"></div>
 
-    <div id="container">
-        <div id="editor"></div>
-        <div id="terminal"></div>
+    <!-- Main Workspace -->
+    <div id="workspace">
+
+        <!-- Sidebar -->
+        <aside id="sidebar">
+
+            <div class="sidebar-title">
+                📁 Files
+            </div>
+
+            <div id="fileExplorer">
+                <!-- JS Generates -->
+            </div>
+
+        </aside>
+
+        <!-- Main Container -->
+        <div id="container">
+
+            <!-- Editor -->
+            <div id="editor"></div>
+
+            <!-- Splitter -->
+            <div id="splitter"></div>
+
+            <!-- Terminal -->
+            <div id="terminalPanel">
+
+                <div id="terminalHeader">
+                    <span>Terminal</span>
+
+                    <button
+                        onclick="clearTerminal()"
+                    >
+                        Clear
+                    </button>
+                </div>
+
+                <div id="terminal"></div>
+
+            </div>
+
+        </div>
+
     </div>
 
+    <!-- Input Modal -->
+    <div id="inputModal" class="hidden">
+
+        <div id="inputBox">
+
+            <h3>Python input()</h3>
+
+            <input
+                type="text"
+                id="pythonInput"
+                placeholder="Enter value..."
+            >
+
+            <div class="modal-buttons">
+
+                <button
+                    onclick="submitInput()"
+                >
+                    Submit
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Package Modal -->
+    <div id="packageModal" class="hidden">
+
+        <div id="packageBox">
+
+            <h3>Install Python Package</h3>
+
+            <input
+                type="text"
+                id="packageName"
+                placeholder="requests"
+            >
+
+            <div class="modal-buttons">
+
+                <button
+                    onclick="confirmInstallPackage()"
+                >
+                    Install
+                </button>
+
+                <button
+                    onclick="closePackageModal()"
+                >
+                    Cancel
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="hidden">
+        Loading Python Runtime...
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusbar">
+
+        <span id="status">
+            Ready
+        </span>
+
+        <span id="autosaveStatus">
+            Auto-save: ON
+        </span>
+
+    </div>
+
+    <!-- Script -->
     <script src="script.js" defer></script>
+
 </body>
 </html>
