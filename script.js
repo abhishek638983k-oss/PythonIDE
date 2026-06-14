@@ -1,71 +1,48 @@
 /* =========================
-   PYODIDE + EDITOR
+   GLOBAL STATE
 ========================= */
 
 let pyodide;
 let editor;
+let currentTab = "main";
+
+let tabs = {
+  main: {
+    name: "main.py",
+    code: `print("Hello from Python IDE")`,
+  },
+};
+
+/* =========================
+   TERMINAL
+========================= */
 
 const terminal = document.getElementById("terminal");
 
 /* =========================
-   INPUT QUEUE (SAFE)
-========================= */
-
-let inputQueue = [];
-
-function pushInput(value) {
-  inputQueue.push(value);
-}
-
-/* =========================
-   PYTHON SAFE INPUT PATCH
+   INIT PYODIDE
 ========================= */
 
 async function initPyodideApp() {
-  terminal.textContent = "Loading Python...\n";
+  document.getElementById("loading").classList.remove("hidden");
 
-  pyodide = await loadPyodide();
-
-  // 🔥 SAFE input() override (NO async blocking)
-  pyodide.globals.set("input", (prompt = "") => {
-    terminal.textContent += prompt;
-
-    // if no input available → return empty string safely
-    if (inputQueue.length === 0) {
-      return "";
-    }
-
-    return inputQueue.shift();
+  pyodide = await loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
   });
 
-  terminal.textContent += "Python Ready ✔\n";
+  pyodide.setStdout({
+    batched: (msg) => (terminal.textContent += msg),
+  });
+
+  pyodide.setStderr({
+    batched: (msg) => (terminal.textContent += msg),
+  });
+
+  document.getElementById("loading").classList.add("hidden");
+  renderFileExplorer();
 }
 
 initPyodideApp();
-
-/* =========================
-   RUN CODE (SAFE)
-========================= */
-
-async function runCode() {
-  terminal.textContent = "";
-
-  const code = editor.getValue();
-
-  try {
-    pyodide.setStdout({
-      batched: (msg) => (terminal.textContent += msg),
-    });
-
-    pyodide.setStderr({
-      batched: (msg) => (terminal.textContent += msg),
-    });
-
-    await pyodide.runPythonAsync(code);
-  } catch (err) {
-    terminal.textContent += "\nError: " + err;
-  }
-}
 
 /* =========================
    MONACO EDITOR
@@ -79,7 +56,7 @@ require.config({
 
 require(["vs/editor/editor.main"], function () {
   editor = monaco.editor.create(document.getElementById("editor"), {
-    value: `print("Safe Pyodide IDE")`,
+    value: tabs[currentTab].code,
     language: "python",
     theme: "vs-dark",
     automaticLayout: true,
@@ -87,28 +64,208 @@ require(["vs/editor/editor.main"], function () {
 });
 
 /* =========================
-   OPTIONAL SIMPLE INPUT BOX
-   (non-blocking)
+   RUN CODE
 ========================= */
 
-function submitInput() {
-  const val = document.getElementById("pythonInput").value;
+async function runCode() {
+  terminal.textContent = "";
 
-  document.getElementById("pythonInput").value = "";
+  const code = editor.getValue();
+  tabs[currentTab].code = code;
 
-  pushInput(val);
-
-  document.getElementById("inputModal").classList.add("hidden");
-}
-
-function openInputModal() {
-  document.getElementById("inputModal").classList.remove("hidden");
+  try {
+    await pyodide.runPythonAsync(code);
+  } catch (err) {
+    terminal.textContent += "\nError: " + err;
+  }
 }
 
 /* =========================
-   UTILS
+   THEME
+========================= */
+
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+  document.body.classList.toggle("light");
+}
+
+/* =========================
+   CLEAR TERMINAL
 ========================= */
 
 function clearTerminal() {
   terminal.textContent = "";
 }
+
+/* =========================
+   UNDO / REDO
+========================= */
+
+function undo() {
+  editor.trigger("keyboard", "undo");
+}
+
+function redo() {
+  editor.trigger("keyboard", "redo");
+}
+
+/* =========================
+   FORMAT CODE
+========================= */
+
+function formatCode() {
+  editor.getAction("editor.action.formatDocument").run();
+}
+
+/* =========================
+   SAVE / LOCAL STORAGE
+========================= */
+
+function saveCode() {
+  tabs[currentTab].code = editor.getValue();
+  localStorage.setItem("pyide_tabs", JSON.stringify(tabs));
+  localStorage.setItem("pyide_current", currentTab);
+
+  document.getElementById("status").textContent = "Saved ✔";
+}
+
+/* =========================
+   LOAD SAVE
+========================= */
+
+function loadSaved() {
+  const saved = localStorage.getItem("pyide_tabs");
+  const current = localStorage.getItem("pyide_current");
+
+  if (saved) tabs = JSON.parse(saved);
+  if (current) currentTab = current;
+}
+
+/* =========================
+   NEW TAB
+========================= */
+
+function newTab() {
+  const id = "tab_" + Date.now();
+
+  tabs[id] = {
+    name: `file_${Object.keys(tabs).length}.py`,
+    code: "",
+  };
+
+  switchTab(id);
+  renderFileExplorer();
+}
+
+/* =========================
+   SWITCH TAB
+========================= */
+
+function switchTab(id) {
+  tabs[currentTab].code = editor.getValue();
+
+  currentTab = id;
+  editor.setValue(tabs[id].code);
+  renderFileExplorer();
+}
+
+/* =========================
+   FILE EXPLORER
+========================= */
+
+function renderFileExplorer() {
+  const explorer = document.getElementById("fileExplorer");
+  explorer.innerHTML = "";
+
+  Object.keys(tabs).forEach((id) => {
+    const div = document.createElement("div");
+    div.className = "file";
+
+    div.textContent = tabs[id].name;
+
+    if (id === currentTab) div.style.fontWeight = "bold";
+
+    div.onclick = () => switchTab(id);
+
+    explorer.appendChild(div);
+  });
+}
+
+/* =========================
+   DOWNLOAD FILE
+========================= */
+
+function downloadFile() {
+  const blob = new Blob([editor.getValue()], {
+    type: "text/python",
+  });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = tabs[currentTab].name;
+  a.click();
+}
+
+/* =========================
+   UPLOAD FILE
+========================= */
+
+function uploadFile() {
+  const input = document.getElementById("fileInput");
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+
+    const reader = new FileReader();
+
+    reader.onload = function () {
+      editor.setValue(reader.result);
+    };
+
+    reader.readAsText(file);
+  };
+
+  input.click();
+}
+
+/* =========================
+   SHARE CODE (URL)
+========================= */
+
+function shareCode() {
+  const code = encodeURIComponent(editor.getValue());
+
+  const url = `${location.origin}${location.pathname}?code=${code}`;
+
+  navigator.clipboard.writeText(url);
+
+  document.getElementById("status").textContent = "Link copied ✔";
+}
+
+/* =========================
+   INSTALL PACKAGE (Pyodide micropip)
+========================= */
+
+async function installPackage() {
+  const name = prompt("Enter package name:");
+
+  if (!name) return;
+
+  await pyodide.loadPackage("micropip");
+  const micropip = pyodide.pyimport("micropip");
+
+  try {
+    await micropip.install(name);
+    alert(`${name} installed ✔`);
+  } catch (err) {
+    alert("Install failed: " + err);
+  }
+}
+
+/* =========================
+   OPTIONAL: RESTORE ON LOAD
+========================= */
+
+window.onload = () => {
+  loadSaved();
+};
