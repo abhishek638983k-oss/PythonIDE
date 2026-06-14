@@ -515,3 +515,8 @@ button:active {
         height: 65%;
     }
 }
+
+::selection{
+    background-color: rgba(0, 128, 0, 0.5);
+    color: white;
+}
