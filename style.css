@@ -1,0 +1,95 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Segoe UI, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+#topbar {
+    background: #1e293b;
+    padding: 6px;
+    text-align: center;
+    font-size: 12px;
+}
+
+#controls {
+    padding: 8px;
+    background: #111827;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+#container {
+    display: flex;
+    height: 88vh;
+}
+
+#editor {
+    width: 70%;
+    height: 100%;
+}
+
+#terminal {
+    width: 30%;
+    background: #020617;
+    color: #22c55e;
+    padding: 10px;
+    overflow: auto;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
+#tabs {
+    display: flex;
+    background: #020617;
+    padding: 5px;
+    gap: 5px;
+    overflow-x: auto;
+}
+
+.tab {
+    padding: 5px 10px;
+    background: #1e293b;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.tab.active {
+    background: #2563eb;
+}
+
+@media (max-width: 768px) {
+    #container {
+        flex-direction: column;
+    }
+
+    #editor {
+        width: 100%;
+        height: 70vh;
+    }
+
+    #terminal {
+        width: 100%;
+        height: 30vh;
+        display: block;
+    }
+}
