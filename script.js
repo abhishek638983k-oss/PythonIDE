@@ -13,6 +13,7 @@ let activeTheme = localStorage.getItem("pyide_theme") === "light" ? "light" : "d
 let autoSaveEnabled = localStorage.getItem("pyide_autosave") !== "false";
 let autoSaveTimer;
 let filesPanelVisible = false;
+let blackInstallPromise;
 
 let tabs = {
   main: {
@@ -121,7 +122,9 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     closeMobileMenu();
     closeFilesPanel();
-    if (!document.getElementById("helpModal").classList.contains("hidden")) {
+    if (!document.getElementById("inputHelpModal").classList.contains("hidden")) {
+      closeInputHelp();
+    } else if (!document.getElementById("helpModal").classList.contains("hidden")) {
       closeHelp();
     } else if (!document.getElementById("renameModal").classList.contains("hidden")) {
       closeRenameModal();
@@ -166,6 +169,15 @@ document.addEventListener("keydown", (event) => {
 function openHelp() {
   document.getElementById("helpModal").classList.remove("hidden");
   document.getElementById("helpBox").focus();
+}
+
+function openInputHelp() {
+  document.getElementById("inputHelpModal").classList.remove("hidden");
+  document.getElementById("inputHelpBox").focus();
+}
+
+function closeInputHelp() {
+  document.getElementById("inputHelpModal").classList.add("hidden");
 }
 
 function closeHelp() {
@@ -541,9 +553,43 @@ function redo() {
    FORMAT CODE
 ========================= */
 
-function formatCode() {
-  if (!editor) return;
-  editor.getAction("editor.action.formatDocument").run();
+async function formatCode() {
+  if (!editor) {
+    setStatus("Editor is still loading", "fa-triangle-exclamation");
+    return;
+  }
+  if (!pyodide) {
+    setStatus("Python runtime is still loading", "fa-triangle-exclamation");
+    return;
+  }
+
+  setStatus("Loading Python formatter…", "fa-spinner");
+  try {
+    if (!blackInstallPromise) {
+      blackInstallPromise = (async () => {
+        await pyodide.loadPackage("micropip");
+        await pyodide.runPythonAsync("import micropip\nawait micropip.install('black')");
+      })();
+    }
+    await blackInstallPromise;
+
+    pyodide.globals.set("_pyide_format_source", editor.getValue());
+    let formatted;
+    try {
+      formatted = pyodide.runPython(
+        "import black\nblack.format_str(_pyide_format_source, mode=black.FileMode())",
+      );
+    } finally {
+      pyodide.globals.delete("_pyide_format_source");
+    }
+    editor.setValue(formatted);
+    setStatus("Code formatted with Black", "fa-wand-magic-sparkles");
+  } catch (error) {
+    blackInstallPromise = null;
+    const message = error instanceof Error ? error.message : String(error);
+    terminal.textContent += `\nFormatter error: ${message}`;
+    setStatus("Formatting failed; see Output", "fa-triangle-exclamation");
+  }
 }
 
 /* =========================
@@ -668,7 +714,7 @@ function renderFileExplorer() {
     name.onclick = () => switchTab(id);
 
     const fileIcon = document.createElement("i");
-    fileIcon.className = "fa-solid fa-file-code";
+    fileIcon.className = "fa-brands fa-python";
     fileIcon.setAttribute("aria-hidden", "true");
     name.append(fileIcon, document.createTextNode(` ${tabs[id].name}`));
 

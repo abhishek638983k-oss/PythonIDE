@@ -407,9 +407,9 @@ button:active {
     color: var(--text);
 }
 
-.file-name .fa-file-code {
+.file-name .fa-python {
 
-    color: var(--muted);
+    color: var(--primary);
 }
 
 .file-rename {
@@ -609,6 +609,15 @@ button:active {
     gap: 8px;
 }
 
+#programInputPanel .program-input-label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+}
+
 #programInputPanel .program-input-actions {
 
     display: flex;
@@ -616,6 +625,24 @@ button:active {
     flex: 0 0 auto;
 
     gap: 6px;
+}
+
+.input-help-button {
+
+    padding: 2px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    line-height: 1;
+}
+
+.input-help-button:hover {
+
+    color: var(--text);
 }
 
 #programInputPanel label {
@@ -670,6 +697,7 @@ button:active {
 ========================= */
 
 #helpModal,
+#inputHelpModal,
 #renameModal,
 #packageModal,
 #loading {
@@ -722,6 +750,29 @@ button:active {
     flex-direction: column;
 
     width: min(760px, calc(100vw - 32px));
+
+    max-height: min(82vh, 800px);
+
+    overflow: hidden;
+
+    border: 1px solid var(--border);
+
+    border-radius: 10px;
+
+    background: var(--panel);
+
+    color: var(--text);
+
+    outline: none;
+}
+
+#inputHelpBox {
+
+    display: flex;
+
+    flex-direction: column;
+
+    width: min(520px, calc(100vw - 32px));
 
     max-height: min(82vh, 800px);
 
@@ -1099,7 +1150,6 @@ button:active {
         font-size: 15px;
     }
 
-    #desktopClearOutput,
     #controls {
         display: none;
     }

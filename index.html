@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python Web Compiler Pro+</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
     <!-- Pyodide -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
@@ -52,9 +53,6 @@
             </button>
             <button id="themeToggle" onclick="toggleTheme()" title="Switch color theme"><i class="fa-solid fa-sun"
                     aria-hidden="true"></i> Light theme</button>
-            <button id="desktopClearOutput" onclick="clearTerminal()" title="Clear output"><i class="fa-solid fa-broom"
-                    aria-hidden="true"></i>
-                Clear</button>
         </div>
     </div>
 
@@ -152,8 +150,14 @@
 
                 <div id="programInputPanel">
                     <div class="program-input-header">
-                        <label for="programInput">Program input <span>One value per input() call · /3n, /4f, /4d, /3ll,
-                                /4s, /4c</span></label>
+                        <div class="program-input-label">
+                            <label for="programInput">Program input <span>e.g. 23 abhi /3n</span></label>
+                            <button type="button" id="inputHelpButton" class="input-help-button"
+                                onclick="openInputHelp()" aria-label="Program input guide"
+                                title="How to provide input() values and generate random data">
+                                <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+                            </button>
+                        </div>
                         <div class="program-input-actions">
                             <button type="button" id="generateInput" onclick="generateProgramInput()"
                                 title="Generate shortcut values (Ctrl+G)">
@@ -174,6 +178,29 @@
 
         </div>
 
+    </div>
+
+    <div id="inputHelpModal" class="hidden">
+        <section id="inputHelpBox" role="dialog" aria-modal="true" aria-labelledby="inputHelpTitle" tabindex="-1">
+            <div class="help-header">
+                <h2 id="inputHelpTitle"><i class="fa-solid fa-circle-question" aria-hidden="true"></i> Program input guide</h2>
+                <button type="button" class="icon-button" onclick="closeInputHelp()" aria-label="Close input guide"
+                    title="Close guide (Esc)">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="help-content">
+                <p>Enter values separated by spaces or new lines. Each Python <code>input()</code> call reads the next value.</p>
+                <p>Example input: <code>abhi 23 56</code> gives <code>abhi</code>, then <code>23</code>, then <code>56</code>.</p>
+                <p>For random values, write <code>/countType</code>, then select <strong>Generate</strong>:</p>
+                <ul>
+                    <li><code>/3n</code> makes 3 integers.</li>
+                    <li><code>/2f</code> makes 2 decimal numbers.</li>
+                    <li><code>/4c</code> makes 4 letters.</li>
+                </ul>
+                <p>Combine values and shortcuts, for example <code>abhi /2n</code>. Generation is manual; running code does not replace shortcuts.</p>
+            </div>
+        </section>
     </div>
 
     <!-- Help -->

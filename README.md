@@ -7,7 +7,7 @@ Rename a file with the Rename button beside its name in the file list. Drag the 
 
 Use the theme button to switch between GitHub-inspired dark and light themes. The selected theme, including the editor syntax colors, is saved across reloads.
 
-The program input field supports manual random-value shortcuts. Enter `/countType` and click **Generate** or press **Ctrl+G** while focused in the input box. Shortcuts are expanded in place and are not generated automatically when running code:
+Select the question-mark beside Program input for a short guide with examples. Enter `/countType` and click **Generate** or press **Ctrl+G** while focused in the input box to create random values. Shortcuts are expanded in place and are not generated automatically when running code:
 
 - `n`: integer from 1 to 100; `f`: decimal with two places from 0 to 100
 - `d`: decimal with six places from 0 to 100
@@ -25,7 +25,7 @@ Counts must be from 1 to 1,000 per shortcut. Multiple shortcuts can be used in o
 - `Ctrl+Shift+C`: copy a share link; `Ctrl+P`: open package installer
 - `Ctrl+Shift+R`: rename current file; `Ctrl+G`: generate input shortcuts while the input box is focused
 
-The toolbar shows each available shortcut on hover. The Help button also contains a feature guide and complete shortcut reference. Press `Escape` to close Help or a dialog.
+The **Format** action uses Black in Pyodide; the formatter is loaded the first time it is used. The toolbar shows each available shortcut on hover. The Help button also contains a feature guide and complete shortcut reference. Press `Escape` to close Help or a dialog.
 
 Auto-save is enabled by default and can be toggled in the status bar. File contents and the selected file are stored in browser local storage. Use **Save** to save manually even with auto-save disabled. In portrait on narrow screens, select the active filename beside the Python logo to open the Files drawer; select the filename arrow or backdrop to close it. The Files action in the menu opens the same drawer.
 
